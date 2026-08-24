@@ -1,43 +1,23 @@
-const CACHE = 'zotti-v1';
-const ARQUIVOS = [
+const CACHE_NAME = 'catalogo-v2';
+const FILES_TO_CACHE = [
+  './',
   './index.html',
   './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
+  './BANG TOYS - ESPECIAL DIA DAS CRIANÇAS.pdf'
 ];
 
-// Instala e cacheia tudo
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ARQUIVOS))
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(FILES_TO_CACHE);
+    })
   );
-  self.skipWaiting();
 });
 
-// Limpa caches antigos
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
-});
-
-// Serve do cache primeiro, tenta rede se não encontrar
-// Se tiver rede, atualiza o cache em segundo plano (stale-while-revalidate)
-self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.open(CACHE).then(async cache => {
-      const cached = await cache.match(e.request);
-      const fetchPromise = fetch(e.request)
-        .then(resp => {
-          if (resp && resp.status === 200)
-            cache.put(e.request, resp.clone());
-          return resp;
-        })
-        .catch(() => cached);
-      return cached || fetchPromise;
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
     })
   );
 });
